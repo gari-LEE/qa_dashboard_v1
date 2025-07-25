@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA 평가 이벤트 대시보드</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #f5f7fa;
+            --card-bg-color: #ffffff;
+            --text-color: #333;
+            --light-text-color: #7f8c8d;
+            --border-color: #e0e7ff;
+            --team1-bg: #e0f2fe;
+            --team1-color: #0284c7;
+            --team2-bg: #fce7f3;
+            --team2-color: #be185d;
+            --gold-color: #ffd43b;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .ai-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .ai-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: var(--card-bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .tab:hover:not(.active) {
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg-color);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-header h3, .top-scorers-section .card-header h4 {
+            color: var(--secondary-color);
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        
+        .toggle-btn svg {
+            transition: transform 0.3s ease;
+            stroke: var(--light-text-color);
+        }
+        
+        .toggle-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .toggle-btn.collapsed svg {
+            transform: rotate(-180deg);
+        }
+        
+        .card-content.hidden {
+            display: none;
+        }
+        
+        .sortable-ghost {
+            opacity: 0.4;
+            background: var(--border-color);
+        }
+        
+        /* Styles for Standard Quarterly View */
+        .metric { font-size: 36px; font-weight: bold; color: var(--primary-color); margin-bottom: 5px; }
+        .metric-label { color: var(--light-text-color); font-size: 14px; }
+        .list-item { padding: 10px 15px; background: #f8f9fa; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+        .list-item:last-child { margin-bottom: 0; }
+        .team-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .team-badge.team1 { background: var(--team1-bg); color: var(--team1-color); }
+        .team-badge.team2 { background: var(--team2-bg); color: var(--team2-color); }
+        .score-badge { background: #f1f3f5; color: #495057; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+        .perfect-score { background: #fff9db; border: 1px solid var(--gold-color); color: #5c4e00; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+        .top-scorers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .top-scorers-section { background: var(--card-bg-color); padding: 25px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .score-distribution { display: flex; flex-direction: column; gap: 10px; }
+        .score-bar { display: flex; align-items: center; gap: 10px; }
+        .score-label { width: 80px; font-size: 14px; color: #666; flex-shrink: 0; }
+        .bar-container { flex: 1; height: 30px; background: #f0f0f0; border-radius: 15px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71); border-radius: 15px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; color: white; font-weight: 500; font-size: 14px; transition: width 0.5s ease-in-out; }
+
+        /* Styles for Analysis View */
+        .analysis-card { padding: 20px; }
+        .analysis-card h4 { font-size: 16px; margin-bottom: 15px; color: var(--secondary-color); }
+        .problem-highlight {
+            background-color: #fff9f2;
+            border: 1px solid #f39c12;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .problem-highlight .workload {
+            font-size: 15px;
+            font-weight: 500;
+            color: #d35400;
+            text-align: center;
+        }
+        .problem-highlight .workload strong { font-size: 24px; }
+        .problem-highlight .workload-detail {
+            font-size: 13px;
+            text-align: center;
+            color: var(--light-text-color);
+            margin-top: 5px;
+        }
+        .comparison-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .comparison-table th, .comparison-table td { border: 1px solid #e9ecef; padding: 12px; text-align: center; font-size: 14px; }
+        .comparison-table th { background-color: #f8f9fa; }
+        .comparison-table td:first-child { text-align: left; font-weight: 500; }
+        .comparison-table .highlight-bad { color: var(--danger-color); font-weight: 700; }
+        .comparison-table .highlight-good { color: var(--success-color); font-weight: 700; }
+
+        .recommendation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8faff;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 4px;
+        }
+        .recommendation h4 { font-size: 16px; margin-bottom: 10px; }
+        .recommendation p { font-size: 14px; line-height: 1.7; }
+        .recommendation strong { color: var(--primary-color); }
+        .recommendation .budget-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9f5ff;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .insight {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #fdf9e7;
+            border-left: 4px solid var(--gold-color);
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            font-size: 22px;
+            color: var(--secondary-color);
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--light-text-color);
+        }
+        .modal-body {
+            line-height: 1.8;
+        }
+        .modal-body h3 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .modal-body ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        .modal-body li {
+            margin-bottom: 8px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>QA 평가 이벤트 대시보드</h1>
+                <p>상담품질 향상을 위한 우수콜 이벤트 현황</p>
+            </div>
+            <button class="ai-button" id="ai-analysis-btn">✨ AI로 전체 데이터 분석하기</button>
+        </div>
+
+        <div class="tabs" id="tabs">
+            <div class="tab" id="tab-overall" onclick="showOverall()">전체</div>
+            <div class="tab" onclick="showQuarter('24년 1분기')">24년 1분기</div>
+            <div class="tab" onclick="showQuarter('24년 2분기')">24년 2분기</div>
+            <div class="tab" onclick="showQuarter('24년 3분기')">24년 3분기</div>
+            <div class="tab" onclick="showQuarter('24년 4분기')">24년 4분기</div>
+            <div class="tab" onclick="showQuarter('25년 1분기')">25년 1분기</div>
+            <div class="tab" onclick="showQuarter('25년 2분기')">25년 2분기</div>
+        </div>
+
+        <div id="quarterContent"></div>
+
+        <div class="card" style="margin-top: 30px;">
+             <div class="card-header">
+                 <h3>분기별 평균 점수 추이</h3>
+                 <button class="toggle-btn" aria-label="차트 보기/숨기기">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                 </button>
+             </div>
+             <div class="card-content">
+                 <div class="chart-container" style="height: 300px;">
+                     <canvas id="trendChart"></canvas>
+                 </div>
+             </div>
+        </div>
+    </div>
+    
+    <!-- AI Analysis Modal -->
+    <div class="modal-overlay" id="ai-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✨ AI 데이터 분석 리포트</h2>
+                <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="ai-modal-body">
+                <!-- AI response will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const data = {"quarters": {"24년 1분기": {"team_avg": {"1팀": 72.5, "2팀": 73.5}, "perfect_scorers": [{"name": "김현정", "team": "2팀"}], "top_non_perfect": [{"name": "김나성", "team": "1팀", "score": 95}, {"name": "김선옥", "team": "1팀", "score": 95}, {"name": "최혜령", "team": "1팀", "score": 95}, {"name": "김지형", "team": "1팀", "score": 95}, {"name": "김경희", "team": "1팀", "score": 90}, {"name": "양수진", "team": "2팀", "score": 90}, {"name": "가영미", "team": "2팀", "score": 85}, {"name": "김인경", "team": "1팀", "score": 85}, {"name": "정미현", "team": "2팀", "score": 85}, {"name": "고진경", "team": "2팀", "score": 85}, {"name": "이은원", "team": "1팀", "score": 80}, {"name": "이종은", "team": "2팀", "score": 80}, {"name": "이미라", "team": "2팀", "score": 75}, {"name": "박동연", "team": "2팀", "score": 75}, {"name": "곽지은", "team": "2팀", "score": 75}], "top3": [{"name": "김현정", "team": "2팀", "score": 100}, {"name": "최혜령", "team": "1팀", "score": 95}, {"name": "김선옥", "team": "1팀", "score": 95}], "score_distribution": {"90-100점": 7, "80-89점": 6, "70-79점": 7, "60-69점": 4, "60점 미만": 4}, "total_count": 28, "average_score": 72.7}, "24년 2분기": {"team_avg": {"1팀": 81.4, "2팀": 75.7}, "perfect_scorers": [{"name": "정미현", "team": "2팀"}, {"name": "고진경", "team": "1팀"}, {"name": "김현정", "team": "2팀"}], "top_non_perfect": [{"name": "김선옥", "team": "1팀", "score": 95}, {"name": "공진숙", "team": "1팀", "score": 95}, {"name": "이호진", "team": "1팀", "score": 90}, {"name": "김나성", "team": "1팀", "score": 90}, {"name": "박연화", "team": "1팀", "score": 90}, {"name": "이미라", "team": "2팀", "score": 85}, {"name": "박미연", "team": "2팀", "score": 85}, {"name": "김현우", "team": "1팀", "score": 85}, {"name": "이종은", "team": "2팀", "score": 85}, {"name": "양수진", "team": "2팀", "score": 80}, {"name": "최혜령", "team": "2팀", "score": 80}, {"name": "이은원", "team": "2팀", "score": 80}, {"name": "김지형", "team": "1팀", "score": 80}, {"name": "김경희", "team": "1팀", "score": 80}, {"name": "김수경", "team": "1팀", "score": 75}, {"name": "서지경", "team": "1팀", "score": 75}], "top3": [{"name": "정미현", "team": "2팀", "score": 100}, {"name": "고진경", "team": "1팀", "score": 100}, {"name": "김현정", "team": "2팀", "score": 100}], "score_distribution": {"90-100점": 8, "80-89점": 9, "70-79점": 4, "60-69점": 4, "60점 미만": 3}, "total_count": 28, "average_score": 78.2}, "24년 3분기": {"team_avg": {"1팀": 72.8, "2팀": 73.4}, "perfect_scorers": [{"name": "김현정", "team": "2팀"}], "top_non_perfect": [{"name": "권미나", "team": "2팀", "score": 95}, {"name": "박영경", "team": "2팀", "score": 95}, {"name": "김지형", "team": "1팀", "score": 90}, {"name": "정미현", "team": "2팀", "score": 90}, {"name": "이호진", "team": "1팀", "score": 90}, {"name": "공진숙", "team": "1팀", "score": 90}, {"name": "양수진", "team": "2팀", "score": 85}, {"name": "고진경", "team": "1팀", "score": 85}, {"name": "김인경", "team": "1팀", "score": 80}, {"name": "이종은", "team": "2팀", "score": 80}, {"name": "박미연", "team": "2팀", "score": 80}, {"name": "김나성", "team": "1팀", "score": 75}, {"name": "서지경", "team": "1팀", "score": 75}, {"name": "정호섭", "team": "1팀", "score": 75}, {"name": "이미라", "team": "2팀", "score": 75}], "top3": [{"name": "김현정", "team": "2팀", "score": 100}, {"name": "박영경", "team": "2팀", "score": 95}, {"name": "권미나", "team": "2팀", "score": 95}], "score_distribution": {"90-100점": 7, "80-89점": 5, "70-79점": 7, "60-69점": 7, "60점 미만": 5}, "total_count": 31, "average_score": 72.8}, "24년 4분기": {"team_avg": {"1팀": 75.0, "2팀": 74.9}, "perfect_scorers": [{"name": "방지영", "team": "1팀"}, {"name": "이종은", "team": "2팀"}, {"name": "정미현", "team": "2팀"}], "top_non_perfect": [{"name": "김현정", "team": "2팀", "score": 95}, {"name": "김현우", "team": "1팀", "score": 90}, {"name": "김지형", "team": "1팀", "score": 90}, {"name": "공진숙", "team": "1팀", "score": 90}, {"name": "최혜령", "team": "2팀", "score": 90}, {"name": "최은미", "team": "2팀", "score": 85}, {"name": "가영미", "team": "2팀", "score": 85}, {"name": "박영경", "team": "2팀", "score": 85}, {"name": "김선옥", "team": "1팀", "score": 85}, {"name": "권미나", "team": "2팀", "score": 85}, {"name": "김나성", "team": "1팀", "score": 85}, {"name": "김경희", "team": "1팀", "score": 80}, {"name": "김인경", "team": "1팀", "score": 80}, {"name": "박미연", "team": "2팀", "score": 75}, {"name": "고진경", "team": "1팀", "score": 75}, {"name": "정호섭", "team": "1팀", "score": 75}, {"name": "박연화", "team": "1팀", "score": 75}], "top3": [{"name": "방지영", "team": "1팀", "score": 100}, {"name": "이종은", "team": "2팀", "score": 100}, {"name": "정미현", "team": "2팀", "score": 100}], "score_distribution": {"90-100점": 8, "80-89점": 8, "70-79점": 5, "60-69점": 5, "60점 미만": 5}, "total_count": 31, "average_score": 74.7}, "25년 1분기": {"team_avg": {"1팀": 80.8, "2팀": 72.7}, "perfect_scorers": [{"name": "방지영", "team": "1팀"}, {"name": "공진숙", "team": "1팀"}], "top_non_perfect": [{"name": "고진경", "team": "1팀", "score": 95}, {"name": "정호섭", "team": "1팀", "score": 95}, {"name": "김인경", "team": "1팀", "score": 95}, {"name": "가영미", "team": "2팀", "score": 95}, {"name": "정미현", "team": "2팀", "score": 95}, {"name": "유지수", "team": "2팀", "score": 90}, {"name": "김나성", "team": "1팀", "score": 90}, {"name": "윤정운", "team": "1팀", "score": 90}, {"name": "이종은", "team": "2팀", "score": 90}, {"name": "이은원", "team": "2팀", "score": 85}, {"name": "김선옥", "team": "1팀", "score": 85}, {"name": "정현주", "team": "2팀", "score": 85}, {"name": "김현정", "team": "2팀", "score": 80}, {"name": "김경희", "team": "1팀", "score": 80}, {"name": "김지형", "team": "1팀", "score": 75}, {"name": "최은미", "team": "2팀", "score": 75}, {"name": "권미나", "team": "2팀", "score": 75}, {"name": "김미정", "team": "2팀", "score": 75}], "top3": [{"name": "방지영", "team": "1팀", "score": 100}, {"name": "공진숙", "team": "1팀", "score": 100}, {"name": "정호섭", "team": "1팀", "score": 95}], "score_distribution": {"90-100점": 11, "80-89점": 5, "70-79점": 6, "60-69점": 8, "60점 미만": 4}, "total_count": 34, "average_score": 76.6}, "25년 2분기": {"team_avg": {"1팀": 78.1, "2팀": 76.9}, "perfect_scorers": [{"name": "정미현", "team": "2팀"}], "top_non_perfect": [{"name": "윤정운", "team": "1팀", "score": 95}, {"name": "김지형", "team": "1팀", "score": 95}, {"name": "유지수", "team": "2팀", "score": 95}, {"name": "이미라", "team": "2팀", "score": 95}, {"name": "가영미", "team": "2팀", "score": 90}, {"name": "김현정", "team": "2팀", "score": 90}, {"name": "이은원", "team": "2팀", "score": 90}, {"name": "권미나", "team": "2팀", "score": 90}, {"name": "박연화", "team": "1팀", "score": 85}, {"name": "박동연", "team": "2팀", "score": 85}, {"name": "김현우", "team": "1팀", "score": 85}, {"name": "고진경", "team": "1팀", "score": 80}, {"name": "양선희", "team": "2팀", "score": 75}, {"name": "정호섭", "team": "1팀", "score": 75}, {"name": "김서인", "team": "1팀", "score": 75}, {"name": "김경희", "team": "1팀", "score": 75}, {"name": "유가은", "team": "2팀", "score": 75}, {"name": "김인경", "team": "1팀", "score": 75}, {"name": "공진숙", "team": "1팀", "score": 75}, {"name": "최혜령", "team": "2팀", "score": 75}, {"name": "김선옥", "team": "1팀", "score": 75}], "top3": [{"name": "정미현", "team": "2팀", "score": 100}, {"name": "윤정운", "team": "1팀", "score": 95}, {"name": "김지형", "team": "1팀", "score": 95}], "score_distribution": {"90-100점": 9, "80-89점": 4, "70-79점": 15, "60-69점": 3, "60점 미만": 2}, "total_count": 33, "average_score": 77.2}}, "timeline": [{"quarter": "24년 1분기", "average": 72.7, "team1_avg": 72.5, "team2_avg": 73.5}, {"quarter": "24년 2분기", "average": 78.2, "team1_avg": 81.4, "team2_avg": 75.7}, {"quarter": "24년 3분기", "average": 72.8, "team1_avg": 72.8, "team2_avg": 73.4}, {"quarter": "24년 4분기", "average": 74.7, "team1_avg": 75.0, "team2_avg": 74.9}, {"quarter": "25년 1분기", "average": 76.6, "team1_avg": 80.8, "team2_avg": 72.7}, {"quarter": "25년 2분기", "average": 77.2, "team1_avg": 78.1, "team2_avg": 76.9}], "generated_at": "2025-07-22 08:32:59"};
+        let trendChart = null;
+
+        const cardToggleIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+
+        function setActiveTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId)?.classList.add('active');
+        }
+
+        function getMedian(numbers) {
+            if (numbers.length === 0) return 0;
+            const sorted = [...numbers].sort((a, b) => a - b);
+            const middleIndex = Math.floor(sorted.length / 2);
+            if (sorted.length % 2 === 0) {
+                return Math.round((sorted[middleIndex - 1] + sorted[middleIndex]) / 2);
+            } else {
+                return sorted[middleIndex];
+            }
+        }
+
+        function showOverall() {
+            setActiveTab('tab-overall');
+            const content = document.getElementById('quarterContent');
+            
+            const historicalCounts = { 100: [], 95: [], 90: [] };
+            let awardsByQuarter = {};
+            let awardsBreakdownByQuarter = {};
+
+            for (const quarterKey in data.quarters) {
+                const qData = data.quarters[quarterKey];
+                const topCount = qData.perfect_scorers.length;
+                const excellentCount = qData.top_non_perfect.filter(s => s.score === 95).length;
+                const encouragementCount = qData.top_non_perfect.filter(s => s.score === 90).length;
+
+                historicalCounts[100].push(topCount);
+                historicalCounts[95].push(excellentCount);
+                historicalCounts[90].push(encouragementCount);
+
+                awardsByQuarter[quarterKey] = topCount + excellentCount + encouragementCount;
+                awardsBreakdownByQuarter[quarterKey] = {
+                    top: topCount,
+                    excellent: excellentCount,
+                    encouragement: encouragementCount
+                };
+            }
+
+            const minAwards = Math.min(...Object.values(awardsByQuarter));
+            const maxAwards = Math.max(...Object.values(awardsByQuarter));
+            
+            const minQuarters = Object.keys(awardsByQuarter).filter(key => awardsByQuarter[key] === minAwards);
+            const maxQuarters = Object.keys(awardsByQuarter).filter(key => awardsByQuarter[key] === maxAwards);
+
+            const maxQuartersString = maxQuarters.map(q => {
+                const breakdown = awardsBreakdownByQuarter[q];
+                return `${q} (100점 ${breakdown.top}명, 95점 ${breakdown.excellent}명, 90점 ${breakdown.encouragement}명)`;
+            }).join(', ');
+
+            const minQuartersString = minQuarters.map(q => {
+                const breakdown = awardsBreakdownByQuarter[q];
+                return `${q} (100점 ${breakdown.top}명, 95점 ${breakdown.excellent}명, 90점 ${breakdown.encouragement}명)`;
+            }).join(', ');
+
+            const medianScores = {
+                100: getMedian(historicalCounts[100]) || 1,
+                95: getMedian(historicalCounts[95]) || 2,
+                90: getMedian(historicalCounts[90]) || 3
+            };
+            
+            const { 100: X, 95: Y, 90: Z } = medianScores;
+            const unrewardedHighAchievers = (X > 1 ? X - 1 : 0) + (Y > 1 ? Y - 1 : 0) + (Z > 3 ? Z - 3 : 0);
+
+            const newBudget1st = X * 50000;
+            const newBudget2nd = Y * 30000;
+            const newBudget3rd = Z * 10000;
+            const totalNewBudget = newBudget1st + newBudget2nd + newBudget3rd;
+
+            const summaryHtml = `
+                <div class="insight" style="margin-top: 25px; border-left-color: var(--secondary-color);">
+                    <h5 style="margin-bottom: 15px; font-size: 15px; color: var(--secondary-color); padding-bottom: 5px; border-bottom: 1px solid #eee;">분기별 고득점자 현황 요약 (24년 1분기 ~ 25년 2분기)</h5>
+                    <p style="font-size: 14px; margin-bottom: 5px; line-height: 1.6;"><strong>🏅 고득점자 최다 분기 (${maxAwards}명):</strong> ${maxQuartersString}</p>
+                    <p style="font-size: 14px; margin-bottom: 15px; line-height: 1.6;"><strong>📉 고득점자 최소 분기 (${minAwards}명):</strong> ${minQuartersString}</p>
+                </div>
+            `;
+
+            content.innerHTML = `
+                <div class="dashboard">
+                     <div class="card analysis-card">
+                         <h4>📅 과거 데이터 기반 25년 3분기 수상 인원 예측</h4>
+                         <table class="comparison-table">
+                             <thead><tr><th>점수</th><th>과거 분기별 발생 (최소-최대)</th><th>25년 3분기 예상 인원 (중간값)</th></tr></thead>
+                             <tbody>
+                                 <tr><td>100점 (최우수)</td><td>${Math.min(...historicalCounts[100])}-${Math.max(...historicalCounts[100])}명</td><td class="highlight-bad">${X}명</td></tr>
+                                 <tr><td>95점 (우수)</td><td>${Math.min(...historicalCounts[95])}-${Math.max(...historicalCounts[95])}명</td><td class="highlight-bad">${Y}명</td></tr>
+                                 <tr><td>90점 (장려)</td><td>${Math.min(...historicalCounts[90])}-${Math.max(...historicalCounts[90])}명</td><td class="highlight-bad">${Z}명</td></tr>
+                             </tbody>
+                         </table>
+                         <p class="insight">과거 데이터를 볼 때, 이번 분기에도 <strong>상위권 동점자가 다수 발생할 확률이 매우 높습니다.</strong></p>
+                     </div>
+                    <div class="card analysis-card">
+                        <h4>🎯 현행 계획의 한계점: 공정성 및 동기부여 저하</h4>
+                        <div class="problem-highlight">
+                            <p class="workload">우수 성과자 <strong>${unrewardedHighAchievers}</strong>명, 보상 제외 예상</p>
+                            <p class="workload-detail">예측에 따르면, 현행 계획 유지 시 최고점을 받고도 수상하지 못하는 인원이 발생합니다. 이는 '운'으로 수상자가 결정된다는 인식을 주어 성과에 대한 신뢰도를 떨어뜨리고, 다른 우수 직원들의 사기를 저하시킬 수 있습니다.</p>
+                        </div>
+                        ${summaryHtml}
+                    </div>
+                </div>
+                <div class="card analysis-card" style="margin-top: 20px;">
+                    <h4>💡 의견
+                    <div class="recommendation">
+                        <h4>"동점자의 경우 공동 수상으로 운영하는 방안을 검토해보시는 것은 어떨지 제안드립니다."</h4>
+                        <p>
+                            동일한 성과를 낸 직원들을 모두 인정하는 '공동 수상' 방식으로 전환 시, 최상위권 직원 모두에게 <strong>공정한 보상</strong>을 제공하여 팀 전체의 <strong>사기 진작</strong>에 기여할 수 있습니다.
+                        </p>
+                        <div class="budget-info">
+                            <strong>예상 수상 인원(${X+Y+Z}명) 전원 시상 시 필요 예산: ${totalNewBudget.toLocaleString()}원</strong><br>
+                            (기존 110,000원 대비 ${(totalNewBudget - 110000).toLocaleString()}원 증액 필요)
+                        </div>
+                    </div>
+                </div>
+            `;
+            new Sortable(document.querySelector('#quarterContent .dashboard'), { animation: 150, ghostClass: 'sortable-ghost' });
+        }
+
+        function showQuarter(quarterKey) {
+            setActiveTab(`tab-${quarterKey.replace(' ', '-')}`);
+            const quarterData = data.quarters[quarterKey];
+            const content = document.getElementById('quarterContent');
+
+            const perfectScorersHtml = quarterData.perfect_scorers.length > 0 ? quarterData.perfect_scorers.map(s => `<div class="perfect-score"><span>${s.name}</span><div style="display: flex; gap: 10px; align-items: center;"><span class="score-badge">100점</span><span class="team-badge ${s.team === '1팀' ? 'team1' : 'team2'}">${s.team}</span></div></div>`).join('') : '';
+            
+            const scorers95 = quarterData.top_non_perfect.filter(s => s.score === 95);
+            const scorers95Html = scorers95.length > 0 ? scorers95.map((s) => `<div class="list-item"><span>${s.name}</span><div style="display: flex; gap: 10px; align-items: center;"><span class="score-badge">${s.score}점</span><span class="team-badge ${s.team === '1팀' ? 'team1' : 'team2'}">${s.team}</span></div></div>`).join('') : '';
+
+            const scorers90 = quarterData.top_non_perfect.filter(s => s.score === 90);
+            const scorers90Html = scorers90.length > 0 ? scorers90.map((s) => `<div class="list-item"><span>${s.name}</span><div style="display: flex; gap: 10px; align-items: center;"><span class="score-badge">${s.score}점</span><span class="team-badge ${s.team === '1팀' ? 'team1' : 'team2'}">${s.team}</span></div></div>`).join('') : '';
+
+            const top3Html = quarterData.top3.map((s, i) => `<div class="list-item"><span>${i + 1}위. ${s.name}</span><div style="display: flex; gap: 10px; align-items: center;"><span class="score-badge">${s.score}점</span><span class="team-badge ${s.team === '1팀' ? 'team1' : 'team2'}">${s.team}</span></div></div>`).join('');
+            
+            const scoreDistHtml = Object.entries(quarterData.score_distribution).map(([range, count]) => {
+                const percentage = quarterData.total_count > 0 ? (count / quarterData.total_count * 100).toFixed(1) : 0;
+                return `<div class="score-bar">
+                            <span class="score-label">${range}</span>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width: ${percentage}%">${count}명</div>
+                            </div>
+                        </div>`;
+            }).join('');
+
+            content.innerHTML = `
+                <div class="top-scorers-grid">
+                    ${perfectScorersHtml ? `<div class="top-scorers-section"><div class="card-header"><h4>🏆 100점 달성자 (${quarterData.perfect_scorers.length}명)</h4><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content">${perfectScorersHtml}</div></div>` : ''}
+                    ${scorers95Html ? `<div class="top-scorers-section"><div class="card-header"><h4>🥈 95점 득점자 (${scorers95.length}명)</h4><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content">${scorers95Html}</div></div>` : ''}
+                    ${scorers90Html ? `<div class="top-scorers-section"><div class="card-header"><h4>🥉 90점 득점자 (${scorers90.length}명)</h4><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content">${scorers90Html}</div></div>` : ''}
+                </div>
+                <div class="dashboard">
+                    <div class="card"><div class="card-header"><h3>전체 평균 점수</h3><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content"><div class="metric">${quarterData.average_score}점</div><div class="metric-label">총 ${quarterData.total_count}명 평가</div></div></div>
+                    <div class="card"><div class="card-header"><h3>팀별 평균 점수</h3><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content" style="margin-top: 5px;"><div class="list-item" style="background: var(--team1-bg);"><span>1팀</span><span style="font-weight: bold; color: var(--team1-color);">${quarterData.team_avg['1팀'] || 0}점</span></div><div class="list-item" style="background: var(--team2-bg);"><span>2팀</span><span style="font-weight: bold; color: var(--team2-color);">${quarterData.team_avg['2팀'] || 0}점</span></div></div></div>
+                    <div class="card"><div class="card-header"><h3>전체 TOP 3</h3><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content">${top3Html}</div></div>
+                </div>
+                <div class="card" style="margin-top: 20px;"><div class="card-header"><h3>점수 분포</h3><button class="toggle-btn" aria-label="카드 보기/숨기기">${cardToggleIcon}</button></div><div class="card-content"><div class="score-distribution">${scoreDistHtml}</div></div></div>
+            `;
+            
+            new Sortable(document.querySelector('#quarterContent .dashboard'), { animation: 150, ghostClass: 'sortable-ghost' });
+            const topScorersGridEl = document.querySelector('#quarterContent .top-scorers-grid');
+            if (topScorersGridEl) new Sortable(topScorersGridEl, { animation: 150, ghostClass: 'sortable-ghost' });
+        }
+
+        function drawTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.timeline.map(d => d.quarter),
+                    datasets: [
+                        { label: '전체 평균', data: data.timeline.map(d => d.average), borderColor: 'var(--primary-color)', backgroundColor: 'rgba(52, 152, 219, 0.1)', borderWidth: 3, pointRadius: 6, pointBackgroundColor: 'var(--primary-color)', tension: 0.3, fill: true },
+                        { label: '1팀 평균', data: data.timeline.map(d => d.team1_avg), borderColor: 'var(--team1-color)', backgroundColor: 'rgba(2, 132, 199, 0.1)', borderWidth: 2, pointRadius: 5, borderDash: [5, 5], tension: 0.3 },
+                        { label: '2팀 평균', data: data.timeline.map(d => d.team2_avg), borderColor: 'var(--team2-color)', backgroundColor: 'rgba(190, 24, 93, 0.1)', borderWidth: 2, pointRadius: 5, borderDash: [5, 5], tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { title: { display: false }, legend: { position: 'top', labels: { padding: 20, font: { size: 14 } } }, tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12, cornerRadius: 8, titleFont: { size: 14 }, bodyFont: { size: 13 } } },
+                    scales: { y: { min: 60, max: 100, ticks: { font: { size: 12 } }, grid: { color: 'rgba(0, 0, 0, 0.05)' } }, x: { ticks: { font: { size: 12 } }, grid: { display: false } } }
+                }
+            });
+        }
+        
+        // --- AI Analysis Feature ---
+        const aiModal = document.getElementById('ai-modal');
+        const aiModalBody = document.getElementById('ai-modal-body');
+
+        function showAiModal() {
+            aiModal.classList.add('visible');
+        }
+
+        function closeAiModal() {
+            aiModal.classList.remove('visible');
+        }
+
+        function simpleMarkdownToHtml(text) {
+             return text
+                .replace(/### (.*?)\n/g, '<h3>$1</h3>')
+                .replace(/\*\* (.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\* (.*?)\n/g, '<li>$1</li>')
+                .replace(/(\n<li>.*<\/li>)/g, '<ul>$1\n</ul>')
+                .replace(/\n/g, '<br>');
+        }
+
+        async function generateAIAnalysis() {
+            showAiModal();
+            aiModalBody.innerHTML = '<div class="spinner"></div><p style="text-align: center;">AI가 데이터를 분석하고 있습니다. 잠시만 기다려주세요...</p>';
+
+            const timelineSummary = data.timeline.map(d => `${d.quarter}: 전체 평균 ${d.average}, 1팀 ${d.team1_avg}, 2팀 ${d.team2_avg}`).join('\n');
+            let totalPerfect = 0;
+            let total95 = 0;
+            let total90 = 0;
+            Object.values(data.quarters).forEach(q => {
+                totalPerfect += q.perfect_scorers.length;
+                total95 += q.top_non_perfect.filter(s => s.score === 95).length;
+                total90 += q.top_non_perfect.filter(s => s.score === 90).length;
+            });
+
+            const prompt = `
+                당신은 유능한 QA 데이터 분석가입니다. 다음 분기별 QA 평가 데이터를 바탕으로 상세한 분석과 실행 가능한 제언을 Markdown 형식으로 작성해주세요.
+
+                **입력 데이터:**
+
+                1.  **분기별 점수 추이:**
+                    ${timelineSummary}
+
+                2.  **주요 고득점자 현황 (누적):**
+                    - 100점: ${totalPerfect}명
+                    - 95점: ${total95}명
+                    - 90점: ${total90}명
+
+                **요청사항:**
+                아래 구조에 따라 한국어로 답변을 작성해주세요. 각 항목은 친절하고 전문적인 분석가의 톤으로 서술해주세요.
+
+                ### 📈 종합 퍼포먼스 분석
+                전체 평균 점수의 변동 추세와 그 의미를 분석해주세요.
+
+                ### 👥 팀별 성과 비교
+                1팀과 2팀의 평균 점수를 비교하고, 격차가 발생하는 원인에 대해 추측해보세요.
+
+                ### 💡 주요 인사이트 및 동향
+                고득점자 데이터나 점수 분포에서 발견할 수 있는 특별한 패턴이나 동향을 찾아주세요.
+
+                ### 🚀 실행 가능한 제언
+                분석 내용을 바탕으로 상담 품질을 향상시키고, 직원들의 동기 부여를 강화할 수 있는 구체적인 방안 2-3가지를 제안해주세요.
+            `;
+            
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyAtRcgfYz-2DKtaRKWNqhz9kNIUQs26r_M"; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 호출 실패: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const rawText = result.candidates[0].content.parts[0].text;
+                    aiModalBody.innerHTML = simpleMarkdownToHtml(rawText);
+                } else {
+                    throw new Error("AI로부터 유효한 응답을 받지 못했습니다.");
+                }
+            } catch (error) {
+                console.error("AI Analysis Error:", error);
+                aiModalBody.innerHTML = `<p style="color: var(--danger-color); text-align: center;">AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</p>`;
+            }
+        }
+
+
+        window.onload = function() {
+            document.querySelectorAll('.tab:not(#tab-overall)').forEach(tab => {
+                tab.id = `tab-${tab.textContent.replace(' ', '-')}`;
+            });
+            
+            document.querySelector('.container').addEventListener('click', function(e) {
+                const button = e.target.closest('.toggle-btn');
+                if (!button) return;
+                const card = button.closest('.card, .top-scorers-section');
+                const content = card.querySelector('.card-content');
+                button.classList.toggle('collapsed');
+                content?.classList.toggle('hidden');
+            });
+
+            // AI Modal Listeners
+            document.getElementById('ai-analysis-btn').addEventListener('click', generateAIAnalysis);
+            document.getElementById('modal-close-btn').addEventListener('click', closeAiModal);
+            aiModal.addEventListener('click', function(e) {
+                if (e.target === aiModal) {
+                    closeAiModal();
+                }
+            });
+
+            showOverall();
+            drawTrendChart();
+        };
+    </script>
+</body>
+</html>
